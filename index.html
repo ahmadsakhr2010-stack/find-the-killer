@@ -1,0 +1,144 @@
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>اكتشف القاتل</title>
+<style>
+*{box-sizing:border-box}
+body{
+ margin:0;
+ font-family:Arial,sans-serif;
+ background:linear-gradient(135deg,#101020,#32133e);
+ color:white;text-align:center;
+ min-height:100vh;padding:25px 15px;
+}
+h1{color:#ffcc45;font-size:34px}
+.card{
+ background:#ffffff12;border:1px solid #ffffff30;
+ border-radius:20px;padding:25px;
+ max-width:420px;margin:25px auto;
+}
+input,button{
+ width:100%;padding:14px;margin:8px 0;
+ border:0;border-radius:12px;font-size:17px;
+}
+input{background:white;color:#222}
+button{
+ background:#ffcc45;color:#21152b;
+ font-weight:bold;cursor:pointer;
+}
+button:disabled{opacity:.5}
+.role{
+ font-size:30px;color:#ffcc45;
+ margin:25px 0;
+}
+.small{color:#ccc;font-size:14px}
+.hidden{display:none}
+</style>
+</head>
+<body>
+
+<h1>🕵️ اكتشف القاتل</h1>
+<p>لعبة الأصدقاء والغموض!</p>
+
+<div class="card" id="setup">
+<h2>ابدأ اللعبة</h2>
+<p>أدخل أسماء اللاعبين، كل اسم في سطر:</p>
+<textarea id="names" rows="6"
+style="width:100%;padding:12px;border-radius:12px;font-size:17px"
+placeholder="أحمد&#10;محمد&#10;علي&#10;خالد"></textarea>
+<button onclick="startGame()">ابدأ اللعب 🎮</button>
+<p class="small">يجب وجود 4 لاعبين على الأقل.</p>
+</div>
+
+<div class="card hidden" id="game">
+<h2 id="player"></h2>
+<p>مرر الهاتف للاعب واضغط لإظهار دوره.</p>
+<button id="show" onclick="showRole()">اكشف دوري 👁️</button>
+<div id="secret" class="hidden">
+<div class="role" id="role"></div>
+<p id="instruction"></p>
+</div>
+<button id="next" class="hidden" onclick="nextPlayer()">إخفاء الدور والانتقال للاعب التالي</button>
+</div>
+
+<div class="card hidden" id="finished">
+<h2>🎭 انتهى توزيع الأدوار!</h2>
+<p>ابدؤوا اللعب وحاولوا اكتشاف القاتل!</p>
+<button onclick="location.reload()">لعبة جديدة 🔄</button>
+</div>
+
+<script>
+let players=[];
+let roles=[];
+let current=0;
+
+function startGame(){
+ players=document.getElementById("names").value
+ .split("\n").map(x=>x.trim()).filter(x=>x);
+
+ if(players.length<4){
+ alert("أدخل أسماء 4 لاعبين على الأقل!");
+ return;
+ }
+
+ roles=players.map(()=> "مواطن");
+ let killer=Math.floor(Math.random()*players.length);
+ roles[killer]="القاتل";
+
+ let detective;
+ do{
+ detective=Math.floor(Math.random()*players.length);
+ }while(detective===killer);
+
+ roles[detective]="المحقق";
+
+ for(let i=roles.length-1;i>0;i--){
+ let j=Math.floor(Math.random()*(i+1));
+ [roles[i],roles[j]]=[roles[j],roles[i]];
+ }
+
+ current=0;
+ document.getElementById("setup").classList.add("hidden");
+ document.getElementById("game").classList.remove("hidden");
+ showPlayer();
+}
+
+function showPlayer(){
+ document.getElementById("player").textContent=
+ "دور اللاعب: "+players[current];
+ document.getElementById("secret").classList.add("hidden");
+ document.getElementById("next").classList.add("hidden");
+ document.getElementById("show").classList.remove("hidden");
+}
+
+function showRole(){
+ let role=roles[current];
+ document.getElementById("role").textContent=
+ role==="القاتل"?"🔪 أنت القاتل":
+ role==="المحقق"?"🕵️ أنت المحقق":"🙂 أنت مواطن";
+
+ document.getElementById("instruction").textContent=
+ role==="القاتل"?"حاول ألا تكشف هويتك!":
+ role==="المحقق"?"حاول اكتشاف القاتل!":
+ "ساعد في اكتشاف القاتل!";
+
+ document.getElementById("secret").classList.remove("hidden");
+ document.getElementById("show").classList.add("hidden");
+ document.getElementById("next").classList.remove("hidden");
+}
+
+function nextPlayer(){
+ current++;
+ if(current>=players.length){
+ document.getElementById("game").classList.add("hidden");
+ document.getElementById("finished").classList.remove("hidden");
+ }else{
+ showPlayer();
+ }
+}
+</script>
+</body>
+</html>
