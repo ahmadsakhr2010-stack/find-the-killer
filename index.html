@@ -139,6 +139,210 @@ function nextPlayer(){
  showPlayer();
  }
 }
-</script>
+// نظام تسجيل النقاط
+let scores = JSON.parse(localStorage.getItem("gameScores") || "{}");
+
+function renderScores() {
+    let panel = document.getElementById("scorePanel");
+
+    if (!panel) {
+        panel = document.createElement("div");
+        panel.id = "scorePanel";
+        panel.className = "card";
+        document.getElementById("finished").appendChild(panel);
+    }
+
+    panel.innerHTML = "<h2>🏆 لوحة النقاط</h2>";
+
+    players.forEach(name => {
+        if (scores[name] === undefined) scores[name] = 0;
+
+        let item = document.createElement("div");
+        item.style.margin = "15px";
+        item.innerHTML = `
+            <h3>${name}: ${scores[name]} نقطة</h3>
+            <button onclick="changeScore('${name}',1)">+1 نقطة</button>
+            <button onclick="changeScore('${name}',-1)">-1 نقطة</button>
+            <button onclick="editScore('${name}')">تعديل النقاط ✏️</button>
+        `;
+        panel.appendChild(item);
+    });
+
+    let reset = document.createElement("button");
+    reset.textContent = "تصفير جميع النقاط";
+    reset.onclick = resetScores;
+    panel.appendChild(reset);
+
+    localStorage.setItem("gameScores", JSON.stringify(scores));
+}
+
+function changeScore(name, amount) {
+    scores[name] = (scores[name] || 0) + amount;
+    renderScores();
+}
+
+function editScore(name) {
+    let value = prompt("أدخل النقاط الجديدة للاعب " + name, scores[name]);
+    if (value !== null && value.trim() !== "" && !isNaN(value)) {
+        scores[name] = Number(value);
+        renderScores();
+    }
+}
+
+function resetScores() {
+    if (confirm("هل تريد تصفير جميع النقاط؟")) {
+        scores = {};
+        renderScores();
+    }
+}
+
+// تحديث الانتقال للاعب الأخير
+function nextPlayer() {
+    current++;
+
+    if (current >= players.length) {
+        document.getElementById("game").classList.add("hidden");
+        document.getElementById("finished").classList.remove("hidden");
+        renderScores();
+    } else {
+        showPlayer();
+    }
+ }// نظام تسجيل النقاط
+let scores = JSON.parse(localStorage.getItem("gameScores") || "{}");
+
+function renderScores() {
+    let panel = document.getElementById("scorePanel");
+
+    if (!panel) {
+        panel = document.createElement("div");
+        panel.id = "scorePanel";
+        panel.className = "card";
+        document.getElementById("finished").appendChild(panel);
+    }
+
+    panel.innerHTML = "<h2>🏆 لوحة النقاط</h2>";
+
+    players.forEach(name => {
+        if (scores[name] === undefined) scores[name] = 0;
+
+        let item = document.createElement("div");
+        item.style.margin = "15px";
+        item.innerHTML = `
+            <h3>${name}: ${scores[name]} نقطة</h3>
+            <button onclick="changeScore('${name}',1)">+1 نقطة</button>
+            <button onclick="changeScore('${name}',-1)">-1 نقطة</button>
+            <button onclick="editScore('${name}')">تعديل النقاط ✏️</button>
+        `;
+        panel.appendChild(item);
+    });
+
+    let reset = document.createElement("button");
+    reset.textContent = "تصفير جميع النقاط";
+    reset.onclick = resetScores;
+    panel.appendChild(reset);
+
+    localStorage.setItem("gameScores", JSON.stringify(scores));
+}
+
+function changeScore(name, amount) {
+    scores[name] = (scores[name] || 0) + amount;
+    renderScores();
+}
+
+function editScore(name) {
+    let value = prompt("أدخل النقاط الجديدة للاعب " + name, scores[name]);
+    if (value !== null && value.trim() !== "" && !isNaN(value)) {
+        scores[name] = Number(value);
+        renderScores();
+    }
+}
+
+function resetScores() {
+    if (confirm("هل تريد تصفير جميع النقاط؟")) {
+        scores = {};
+        renderScores();
+    }
+}
+
+// تحديث الانتقال للاعب الأخير
+function nextPlayer() {
+    current++;
+
+    if (current >= players.length) {
+        document.getElementById("game").classList.add("hidden");
+        document.getElementById("finished").classList.remove("hidden");
+        renderScores();
+    } else {
+        showPlayer();
+   // نظام تسجيل النقاط
+let scores = JSON.parse(localStorage.getItem("gameScores") || "{}");
+
+function renderScores() {
+    let panel = document.getElementById("scorePanel");
+
+    if (!panel) {
+        panel = document.createElement("div");
+        panel.id = "scorePanel";
+        panel.className = "card";
+        document.getElementById("finished").appendChild(panel);
+    }
+
+    panel.innerHTML = "<h2>🏆 لوحة النقاط</h2>";
+
+    players.forEach(name => {
+        if (scores[name] === undefined) scores[name] = 0;
+
+        let item = document.createElement("div");
+        item.style.margin = "15px";
+        item.innerHTML = `
+            <h3>${name}: ${scores[name]} نقطة</h3>
+            <button onclick="changeScore('${name}',1)">+1 نقطة</button>
+            <button onclick="changeScore('${name}',-1)">-1 نقطة</button>
+            <button onclick="editScore('${name}')">تعديل النقاط ✏️</button>
+        `;
+        panel.appendChild(item);
+    });
+
+    let reset = document.createElement("button");
+    reset.textContent = "تصفير جميع النقاط";
+    reset.onclick = resetScores;
+    panel.appendChild(reset);
+
+    localStorage.setItem("gameScores", JSON.stringify(scores));
+}
+
+function changeScore(name, amount) {
+    scores[name] = (scores[name] || 0) + amount;
+    renderScores();
+}
+
+function editScore(name) {
+    let value = prompt("أدخل النقاط الجديدة للاعب " + name, scores[name]);
+    if (value !== null && value.trim() !== "" && !isNaN(value)) {
+        scores[name] = Number(value);
+        renderScores();
+    }
+}
+
+function resetScores() {
+    if (confirm("هل تريد تصفير جميع النقاط؟")) {
+        scores = {};
+        renderScores();
+    }
+}
+
+// تحديث الانتقال للاعب الأخير
+function nextPlayer() {
+    current++;
+
+    if (current >= players.length) {
+        document.getElementById("game").classList.add("hidden");
+        document.getElementById("finished").classList.remove("hidden");
+        renderScores();
+    } else {
+        showPlayer();
+    }
+} }
+}</script>
 </body>
 </html>
