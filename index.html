@@ -1,348 +1,210 @@
 
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>اكتشف القاتل</title>
 <style>
 *{box-sizing:border-box}
-body{
- margin:0;
- font-family:Arial,sans-serif;
- background:linear-gradient(135deg,#101020,#32133e);
- color:white;text-align:center;
- min-height:100vh;padding:25px 15px;
-}
-h1{color:#ffcc45;font-size:34px}
-.card{
- background:#ffffff12;border:1px solid #ffffff30;
- border-radius:20px;padding:25px;
- max-width:420px;margin:25px auto;
-}
-input,button{
- width:100%;padding:14px;margin:8px 0;
- border:0;border-radius:12px;font-size:17px;
-}
-input{background:white;color:#222}
-button{
- background:#ffcc45;color:#21152b;
- font-weight:bold;cursor:pointer;
-}
-button:disabled{opacity:.5}
-.role{
- font-size:30px;color:#ffcc45;
- margin:25px 0;
-}
-.small{color:#ccc;font-size:14px}
-.hidden{display:none}
+body{margin:0;padding:16px;background:#101322;color:white;font-family:Arial;text-align:center}
+.container{max-width:520px;margin:auto}
+h1{color:#ff4757;font-size:34px}
+h2{color:#ffc857}
+.card{background:#202940;padding:18px;margin:14px 0;border-radius:16px}
+input,button{width:100%;padding:14px;margin:7px 0;border:0;border-radius:10px;font-size:16px}
+input{background:white;color:#111}
+button{background:#e84355;color:white;font-weight:bold}
+.green{background:#168b61}
+.blue{background:#3265b5}
+.gray{background:#45516b}
+.hidden{display:none!important}
+.player{display:flex;justify-content:space-between;align-items:center;background:#303c56;padding:10px;margin:8px 0;border-radius:10px;gap:8px}
+.player button{width:auto;padding:8px}
+.role{background:#303c56;padding:30px 10px;border-radius:15px;font-size:24px;margin:15px 0}
+small{color:#bdc8df}
 </style>
 </head>
 <body>
+<div class="container">
 
-<h1>🕵️ اكتشف القاتل</h1>
-<p>لعبة الأصدقاء والغموض!</p>
+<h1>🔪 اكتشف القاتل</h1>
+<p>لعبة الغموض والتحقيق 🕵️</p>
 
 <div class="card" id="setup">
-<h2>ابدأ اللعبة</h2>
-<p>أدخل أسماء اللاعبين، كل اسم في سطر:</p>
-<textarea id="names" rows="6"
-style="width:100%;padding:12px;border-radius:12px;font-size:17px"
-placeholder="أحمد&#10;محمد&#10;علي&#10;خالد"></textarea>
-<button onclick="startGame()">ابدأ اللعب 🎮</button>
-<p class="small">يجب وجود 4 لاعبين على الأقل.</p>
+<h2>👥 أسماء اللاعبين</h2>
+<input id="playerName" placeholder="اكتب اسم اللاعب">
+<button onclick="addPlayer()">إضافة لاعب</button>
+<div id="playersList"></div>
+<p id="count">عدد اللاعبين: 0</p>
+<button class="green" onclick="startGame()">ابدأ اللعبة 🎮</button>
 </div>
 
 <div class="card hidden" id="game">
-<h2 id="player"></h2>
-<p>مرر الهاتف للاعب واضغط لإظهار دوره.</p>
-<button id="show" onclick="showRole()">اكشف دوري 👁️</button>
-<div id="secret" class="hidden">
-<div class="role" id="role"></div>
-<p id="instruction"></p>
-</div>
-<button id="next" class="hidden" onclick="nextPlayer()">إخفاء الدور والانتقال للاعب التالي</button>
+<h2 id="roundLabel">الجولة 1</h2>
+<h3 id="currentPlayer"></h3>
+<div class="role" id="roleBox">اضغط لإظهار دورك</div>
+<button onclick="revealRole()">👁️ إظهار الدور</button>
+<button class="blue" onclick="nextPlayer()">اللاعب التالي</button>
+<p><small>لا تجعل الآخرين يرون دورك!</small></p>
+<button class="green" onclick="finishRound()">🏆 إنهاء الجولة</button>
 </div>
 
-<div class="card hidden" id="finished">
-<h2>🎭 انتهى توزيع الأدوار!</h2>
-<p>ابدؤوا اللعب وحاولوا اكتشاف القاتل!</p>
-<button onclick="location.reload()">لعبة جديدة 🔄</button>
+<div class="card hidden" id="scores">
+<h2>🏆 جدول النقاط</h2>
+<div id="scoreList"></div>
+<button class="green" onclick="newRound()">جولة جديدة</button>
+<button class="gray" onclick="backToPlayers()">إدارة اللاعبين</button>
+<button onclick="resetAll()">حذف اللعبة بالكامل</button>
+</div>
+
+<div class="card">
+<h2>🎵 المؤثرات الصوتية</h2>
+<button class="blue" onclick="toggleSound()" id="soundBtn">تشغيل الصوت</button>
+</div>
 </div>
 
 <script>
 let players=[];
 let roles=[];
-let current=0;
+let round=1;
+let turn=0;
+let revealed=false;
+let soundOn=false;
+let audioContext=null;
 
+try{
+players=JSON.parse(localStorage.getItem("killer_players")||"[]");
+if(!Array.isArray(players))players=[];
+}catch(e){players=[]}
+
+function save(){
+localStorage.setItem("killer_players",JSON.stringify(players));
+}
+
+function render(){
+document.getElementById("playersList").innerHTML=players.map((p,i)=>`
+<div class="player">
+<span>${escapeHTML(p.name)} — ${p.score} نقطة</span>
+<button onclick="removePlayer(${i})">حذف</button>
+</div>`).join("");
+document.getElementById("count").textContent="عدد اللاعبين: "+players.length;
+}
+function escapeHTML(s){
+return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+function addPlayer(){
+let input=document.getElementById("playerName");
+let name=input.value.trim();
+if(!name)return alert("اكتب اسم اللاعب");
+if(players.some(p=>p.name.toLowerCase()===name.toLowerCase()))return alert("الاسم موجود");
+players.push({name,score:0});
+input.value="";
+save();render();
+}
+function removePlayer(i){
+players.splice(i,1);save();render();
+}
 function startGame(){
- players=document.getElementById("names").value
- .split("\n").map(x=>x.trim()).filter(x=>x);
-
- if(players.length<4){
- alert("أدخل أسماء 4 لاعبين على الأقل!");
- return;
- }
-
- roles=players.map(()=> "مواطن");
- let killer=Math.floor(Math.random()*players.length);
- roles[killer]="القاتل";
-
- let detective;
- do{
- detective=Math.floor(Math.random()*players.length);
- }while(detective===killer);
-
- roles[detective]="المحقق";
-
- for(let i=roles.length-1;i>0;i--){
- let j=Math.floor(Math.random()*(i+1));
- [roles[i],roles[j]]=[roles[j],roles[i]];
- }
-
- current=0;
- document.getElementById("setup").classList.add("hidden");
- document.getElementById("game").classList.remove("hidden");
- showPlayer();
+if(players.length<3)return alert("أضف 3 لاعبين على الأقل");
+roles=players.map(()=>"مواطن");
+let killer=Math.floor(Math.random()*players.length);
+roles[killer]="القاتل";
+let detective;
+do{detective=Math.floor(Math.random()*players.length)}while(detective===killer);
+roles[detective]="المحقق";
+turn=0;
+document.getElementById("setup").classList.add("hidden");
+document.getElementById("scores").classList.add("hidden");
+document.getElementById("game").classList.remove("hidden");
+document.getElementById("roundLabel").textContent="الجولة "+round;
+showTurn();
 }
-
-function showPlayer(){
- document.getElementById("player").textContent=
- "دور اللاعب: "+players[current];
- document.getElementById("secret").classList.add("hidden");
- document.getElementById("next").classList.add("hidden");
- document.getElementById("show").classList.remove("hidden");
+function showTurn(){
+revealed=false;
+document.getElementById("currentPlayer").textContent="دور اللاعب: "+players[turn].name;
+document.getElementById("roleBox").textContent="اضغط لإظهار دورك";
 }
-
-function showRole(){
- let role=roles[current];
- document.getElementById("role").textContent=
- role==="القاتل"?"🔪 أنت القاتل":
- role==="المحقق"?"🕵️ أنت المحقق":"🙂 أنت مواطن";
-
- document.getElementById("instruction").textContent=
- role==="القاتل"?"حاول ألا تكشف هويتك!":
- role==="المحقق"?"حاول اكتشاف القاتل!":
- "ساعد في اكتشاف القاتل!";
-
- document.getElementById("secret").classList.remove("hidden");
- document.getElementById("show").classList.add("hidden");
- document.getElementById("next").classList.remove("hidden");
+function revealRole(){
+document.getElementById("roleBox").textContent="دورك: "+roles[turn];
+revealed=true;
 }
-
 function nextPlayer(){
- current++;
- if(current>=players.length){
- document.getElementById("game").classList.add("hidden");
- document.getElementById("finished").classList.remove("hidden");
- }else{
- showPlayer();
- }
+if(turn<players.length-1){
+turn++;showTurn();
+}else{
+alert("انتهى توزيع الأدوار. ابدأوا اللعب!");
 }
-// نظام تسجيل النقاط
-let scores = JSON.parse(localStorage.getItem("gameScores") || "{}");
-
-function renderScores() {
-    let panel = document.getElementById("scorePanel");
-
-    if (!panel) {
-        panel = document.createElement("div");
-        panel.id = "scorePanel";
-        panel.className = "card";
-        document.getElementById("finished").appendChild(panel);
-    }
-
-    panel.innerHTML = "<h2>🏆 لوحة النقاط</h2>";
-
-    players.forEach(name => {
-        if (scores[name] === undefined) scores[name] = 0;
-
-        let item = document.createElement("div");
-        item.style.margin = "15px";
-        item.innerHTML = `
-            <h3>${name}: ${scores[name]} نقطة</h3>
-            <button onclick="changeScore('${name}',1)">+1 نقطة</button>
-            <button onclick="changeScore('${name}',-1)">-1 نقطة</button>
-            <button onclick="editScore('${name}')">تعديل النقاط ✏️</button>
-        `;
-        panel.appendChild(item);
-    });
-
-    let reset = document.createElement("button");
-    reset.textContent = "تصفير جميع النقاط";
-    reset.onclick = resetScores;
-    panel.appendChild(reset);
-
-    localStorage.setItem("gameScores", JSON.stringify(scores));
 }
-
-function changeScore(name, amount) {
-    scores[name] = (scores[name] || 0) + amount;
-    renderScores();
+function finishRound(){
+let winner=prompt("اكتب اسم اللاعب أو الفريق الفائز:");
+if(winner===null)return;
+let p=players.find(x=>x.name.toLowerCase()===winner.trim().toLowerCase());
+if(!p)return alert("الاسم غير موجود. اكتب اسم لاعب كما هو.");
+p.score+=3;
+let k=roles.indexOf("القاتل");
+players[k].score+=1;
+save();
+document.getElementById("game").classList.add("hidden");
+document.getElementById("scores").classList.remove("hidden");
+showScores();
 }
-
-function editScore(name) {
-    let value = prompt("أدخل النقاط الجديدة للاعب " + name, scores[name]);
-    if (value !== null && value.trim() !== "" && !isNaN(value)) {
-        scores[name] = Number(value);
-        renderScores();
-    }
+function showScores(){
+document.getElementById("scoreList").innerHTML=[...players]
+.sort((a,b)=>b.score-a.score)
+.map(p=>`<div class="player">
+<span>${escapeHTML(p.name)} — ${p.score} نقطة</span>
+<button onclick="editScore('${escapeHTML(p.name).replace(/'/g,"&#39;")}')">تعديل</button>
+</div>`).join("");
 }
-
-function resetScores() {
-    if (confirm("هل تريد تصفير جميع النقاط؟")) {
-        scores = {};
-        renderScores();
-    }
+function editScore(name){
+let p=players.find(x=>x.name===name);
+if(!p)return;
+let n=prompt("أدخل النقاط الجديدة:",p.score);
+if(n===null||n.trim()===""||!Number.isFinite(Number(n)))return;
+p.score=Number(n);save();showScores();
 }
-
-// تحديث الانتقال للاعب الأخير
-function nextPlayer() {
-    current++;
-
-    if (current >= players.length) {
-        document.getElementById("game").classList.add("hidden");
-        document.getElementById("finished").classList.remove("hidden");
-        renderScores();
-    } else {
-        showPlayer();
-    }
- }// نظام تسجيل النقاط
-let scores = JSON.parse(localStorage.getItem("gameScores") || "{}");
-
-function renderScores() {
-    let panel = document.getElementById("scorePanel");
-
-    if (!panel) {
-        panel = document.createElement("div");
-        panel.id = "scorePanel";
-        panel.className = "card";
-        document.getElementById("finished").appendChild(panel);
-    }
-
-    panel.innerHTML = "<h2>🏆 لوحة النقاط</h2>";
-
-    players.forEach(name => {
-        if (scores[name] === undefined) scores[name] = 0;
-
-        let item = document.createElement("div");
-        item.style.margin = "15px";
-        item.innerHTML = `
-            <h3>${name}: ${scores[name]} نقطة</h3>
-            <button onclick="changeScore('${name}',1)">+1 نقطة</button>
-            <button onclick="changeScore('${name}',-1)">-1 نقطة</button>
-            <button onclick="editScore('${name}')">تعديل النقاط ✏️</button>
-        `;
-        panel.appendChild(item);
-    });
-
-    let reset = document.createElement("button");
-    reset.textContent = "تصفير جميع النقاط";
-    reset.onclick = resetScores;
-    panel.appendChild(reset);
-
-    localStorage.setItem("gameScores", JSON.stringify(scores));
+function newRound(){
+round++;
+startGame();
 }
-
-function changeScore(name, amount) {
-    scores[name] = (scores[name] || 0) + amount;
-    renderScores();
+function backToPlayers(){
+document.getElementById("scores").classList.add("hidden");
+document.getElementById("setup").classList.remove("hidden");
+render();
 }
-
-function editScore(name) {
-    let value = prompt("أدخل النقاط الجديدة للاعب " + name, scores[name]);
-    if (value !== null && value.trim() !== "" && !isNaN(value)) {
-        scores[name] = Number(value);
-        renderScores();
-    }
+function resetAll(){
+if(!confirm("هل تريد حذف جميع اللاعبين والنقاط؟"))return;
+players=[];round=1;roles=[];
+localStorage.removeItem("killer_players");
+document.getElementById("scores").classList.add("hidden");
+document.getElementById("game").classList.add("hidden");
+document.getElementById("setup").classList.remove("hidden");
+render();
 }
-
-function resetScores() {
-    if (confirm("هل تريد تصفير جميع النقاط؟")) {
-        scores = {};
-        renderScores();
-    }
+function toggleSound(){
+soundOn=!soundOn;
+document.getElementById("soundBtn").textContent=soundOn?"إيقاف الصوت":"تشغيل الصوت";
+if(soundOn){
+try{
+audioContext=new (window.AudioContext||window.webkitAudioContext)();
+playTone();
+}catch(e){soundOn=false;}
 }
-
-// تحديث الانتقال للاعب الأخير
-function nextPlayer() {
-    current++;
-
-    if (current >= players.length) {
-        document.getElementById("game").classList.add("hidden");
-        document.getElementById("finished").classList.remove("hidden");
-        renderScores();
-    } else {
-        showPlayer();
-   // نظام تسجيل النقاط
-let scores = JSON.parse(localStorage.getItem("gameScores") || "{}");
-
-function renderScores() {
-    let panel = document.getElementById("scorePanel");
-
-    if (!panel) {
-        panel = document.createElement("div");
-        panel.id = "scorePanel";
-        panel.className = "card";
-        document.getElementById("finished").appendChild(panel);
-    }
-
-    panel.innerHTML = "<h2>🏆 لوحة النقاط</h2>";
-
-    players.forEach(name => {
-        if (scores[name] === undefined) scores[name] = 0;
-
-        let item = document.createElement("div");
-        item.style.margin = "15px";
-        item.innerHTML = `
-            <h3>${name}: ${scores[name]} نقطة</h3>
-            <button onclick="changeScore('${name}',1)">+1 نقطة</button>
-            <button onclick="changeScore('${name}',-1)">-1 نقطة</button>
-            <button onclick="editScore('${name}')">تعديل النقاط ✏️</button>
-        `;
-        panel.appendChild(item);
-    });
-
-    let reset = document.createElement("button");
-    reset.textContent = "تصفير جميع النقاط";
-    reset.onclick = resetScores;
-    panel.appendChild(reset);
-
-    localStorage.setItem("gameScores", JSON.stringify(scores));
 }
-
-function changeScore(name, amount) {
-    scores[name] = (scores[name] || 0) + amount;
-    renderScores();
+function playTone(){
+if(!soundOn||!audioContext)return;
+let oscillator=audioContext.createOscillator();
+let gain=audioContext.createGain();
+oscillator.type="sine";
+oscillator.frequency.value=440;
+gain.gain.value=0.035;
+oscillator.connect(gain);
+gain.connect(audioContext.destination);
+oscillator.start();
+oscillator.stop(audioContext.currentTime+0.15);
 }
-
-function editScore(name) {
-    let value = prompt("أدخل النقاط الجديدة للاعب " + name, scores[name]);
-    if (value !== null && value.trim() !== "" && !isNaN(value)) {
-        scores[name] = Number(value);
-        renderScores();
-    }
-}
-
-function resetScores() {
-    if (confirm("هل تريد تصفير جميع النقاط؟")) {
-        scores = {};
-        renderScores();
-    }
-}
-
-// تحديث الانتقال للاعب الأخير
-function nextPlayer() {
-    current++;
-
-    if (current >= players.length) {
-        document.getElementById("game").classList.add("hidden");
-        document.getElementById("finished").classList.remove("hidden");
-        renderScores();
-    } else {
-        showPlayer();
-    }
-} }
-}</script>
+render();
+</script>
 </body>
 </html>
